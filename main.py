@@ -1,5 +1,6 @@
 import os, re
 import logging
+from pathlib import Path
 
 def setup_logging():
     logging.basicConfig(
@@ -30,33 +31,29 @@ class ZipList:
     def cleaning_zips(self):
         # Remove () within [] zip names
         # Strip first character if its a [
-        zips_new_name = [re.sub(r'^\[(.*?)]', 
+        self.zips_new_name = [re.sub(r'^\[(.*?)]', 
                                 lambda m: "[{}]".format(re.sub(r' \(.*?\)', '', m.group(1))),
                                 i, count=1)
                                 for i in self.zips]
-        zips_new_name = [i[1:] if i[0] == '[' else i for i in zips_new_name]
+        self.zips_new_name = [i[1:] if i[0] == '[' else i for i in self.zips_new_name]
         logging.info('Starting cleaning.')
-        
-        self.rename_zips(zips_new_name)
 
     def shorten_zips(self):
         # Reduce zips to specified number of characters
         threshold = 100
         prefix_length = threshold - 4
-        zips_new_name = [i[:prefix_length]+i[-4:] if len(i)>threshold else i for i in self.zips]
+        self.zips_new_name = [i[:prefix_length]+i[-4:] if len(i)>threshold else i for i in self.zips_new_name]
         logging.info(f'There are {len([i for i in self.zips if len(i)>threshold])} zips longer than {threshold} characters.')
         logging.info('Starting shortening.')
-        
-        self.rename_zips(zips_new_name)
 
-    def rename_zips(self, zips_new_name):
+    def rename_zips(self):
         # renames within current directory or moves to another directory
         logging.info(f'Writing to {self.output_directory}')
         logging.debug(f'Renamed zips are:')
 
-        for i, j in zip(self.zips,zips_new_name):
+        for i, j in zip(self.zips,self.zips_new_name):
             input_path = f'{self.input_directory}{i}'
-            output_path = f'{self.output_directory}{j}' 
+            output_path = self.output_directory / "outputs" / j
 
             if i != j:
                 logging.debug(i)
@@ -64,16 +61,17 @@ class ZipList:
                 logging.debug('-----------------------------------------------------------------------------')
             
             os.rename(src=input_path, dst=output_path)
-            self.zips = zips_new_name
 
 def main():
     setup_logging()
     logging.info('=============================================================================')
     input_directory = './'
+    output_directory = Path.home() / "Desktop"
     try:
-        zip_list = ZipList(input_directory)
+        zip_list = ZipList(input_directory, output_directory)
         zip_list.cleaning_zips()
         zip_list.shorten_zips()
+        zip_list.rename_zips()
     except Exception as e:
         logging.critical(f'Error: {e}')
 
