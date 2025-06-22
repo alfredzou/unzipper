@@ -30,7 +30,10 @@ class ZipList:
     def cleaning_zips(self):
         # Remove () within [] zip names
         # Strip first character if its a [
-        zips_new_name = [re.sub(r' \(.*?\)', '', i) if re.search(r'^\[.*\(.*\).*\]', i) else i for i in self.zips]
+        zips_new_name = [re.sub(r'^\[(.*?)]', 
+                                lambda m: "[{}]".format(re.sub(r' \(.*?\)', '', m.group(1))),
+                                i, count=1)
+                                for i in self.zips]
         zips_new_name = [i[1:] if i[0] == '[' else i for i in zips_new_name]
         logging.info('Starting cleaning.')
         
@@ -66,10 +69,13 @@ class ZipList:
 def main():
     setup_logging()
     logging.info('=============================================================================')
-    input_directory = './input/'
-    zip_list = ZipList(input_directory)
-    zip_list.cleaning_zips()
-    zip_list.shorten_zips()
+    input_directory = './'
+    try:
+        zip_list = ZipList(input_directory)
+        zip_list.cleaning_zips()
+        zip_list.shorten_zips()
+    except Exception as e:
+        logging.critical(f'Error: {e}')
 
 if __name__ == '__main__':
     main()
