@@ -12,7 +12,8 @@ def setup_logging():
 class ZipList:
     def __init__(self, input_directory, output_directory=None):
         # Create list of zips 
-        self.input_directory,_,files = os.walk(input_directory).__next__()
+        self.input_directory = input_directory
+        _,_,files = os.walk(input_directory).__next__()
         logging.info(f'Scanning {self.input_directory}')
 
         if output_directory == None:
@@ -52,8 +53,8 @@ class ZipList:
         logging.debug(f'Renamed zips are:')
 
         for i, j in zip(self.zips,self.zips_new_name):
-            input_path = f'{self.input_directory}{i}'
-            output_path = self.output_directory / "outputs" / j
+            input_path = self.input_directory / i
+            output_path = self.output_directory / 'outputs' / j
 
             if i != j:
                 logging.debug(i)
@@ -65,8 +66,8 @@ class ZipList:
 def main():
     setup_logging()
     logging.info('=============================================================================')
-    input_directory = './'
-    output_directory = Path.home() / "Desktop"
+    input_directory = Path.home() / 'Downloads' / 'finished'
+    output_directory = Path.home() / 'Desktop'
     try:
         zip_list = ZipList(input_directory, output_directory)
         zip_list.cleaning_zips()
