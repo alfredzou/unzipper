@@ -1,6 +1,7 @@
 import os, re
 import logging
 from pathlib import Path
+import shutil
 
 def setup_logging():
     logging.basicConfig(
@@ -54,7 +55,7 @@ class ZipList:
 
         for i, j in zip(self.zips,self.zips_new_name):
             input_path = self.input_directory / i
-            output_path = self.output_directory / 'outputs' / j
+            output_path = self.output_directory  / j
 
             if i != j:
                 logging.debug(i)
@@ -63,16 +64,43 @@ class ZipList:
             
             os.rename(src=input_path, dst=output_path)
 
+    def space_check(self):
+        # Check if more than 5 gbs
+        _,_,free = shutil.disk_usage(self.output_directory)
+        free_gb = free // 2**30
+        space_check = free_gb > 5
+        logging.debug(f"Free space (gb) is {free_gb}. Sufficient space: {space_check}.")
+        return space_check
+
+    def extract_zips(self):
+        file_list = os.listdir(self.output_directory)
+        zips = [i for i in file_list if re.search(r'.(zip|rar)$',i)]
+        zips_path = [self.output_directory / i for i in zips]
+        extracted_zips_path = [self.output_directory / '(processed)' / i for i in zips]
+
+        for zip_name, i, j in zip(zips, zips_path,extracted_zips_path):
+            logging.debug(f"Attempting to extract {i}")
+            if self.space_check():
+                try:
+                    extracted_path = self.output_directory / '(processed)' / str.strip(zip_name[:len(zip_name)-4])
+                    shutil.unpack_archive(i, extracted_path)
+                    if os.path.isdir(extracted_path) and os.listdir(extracted_path):
+                        os.remove(i)
+                        logging.debug(f'Unpack verified, zip deleted.')
+                except Exception as e:
+                    logging.critical(f'Unpack failed: {e}')
+
 def main():
     setup_logging()
     logging.info('=============================================================================')
     input_directory = Path.home() / 'Downloads' / 'finished'
-    output_directory = Path.home() / 'Desktop'
+    output_directory = Path.home() / 'Desktop' / 'outputs'
     try:
         zip_list = ZipList(input_directory, output_directory)
         zip_list.cleaning_zips()
         zip_list.shorten_zips()
         zip_list.rename_zips()
+        zip_list.extract_zips()
     except Exception as e:
         logging.critical(f'Error: {e}')
 
