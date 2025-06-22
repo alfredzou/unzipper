@@ -28,13 +28,13 @@ class ZipList:
         logging.debug(f'The zips are: {self.zips}')
 
     def cleaning_zips(self):
-        # Remove 
-
-        # self.rename_zips()
-        pass
-        # input_zip_zips = [file for file in zips if re.search(r'^\(.*?\).*\.(zip|rar)$',file)]
-        # f2 = [re.sub('^\(.*?\) ','',file) for file in input_zip_zips]
-        # f2
+        # Remove () within [] zip names
+        # Strip first character if its a [
+        zips_new_name = [re.sub(r' \(.*?\)', '', i) if re.search(r'^\[.*\(.*\).*\]', i) else i for i in self.zips]
+        zips_new_name = [i[1:] if i[0] == '[' else i for i in zips_new_name]
+        logging.info('Starting cleaning.')
+        
+        self.rename_zips(zips_new_name)
 
     def shorten_zips(self):
         # Reduce zips to specified number of characters
@@ -42,11 +42,12 @@ class ZipList:
         prefix_length = threshold - 4
         zips_new_name = [i[:prefix_length]+i[-4:] if len(i)>threshold else i for i in self.zips]
         logging.info(f'There are {len([i for i in self.zips if len(i)>threshold])} zips longer than {threshold} characters.')
+        logging.info('Starting shortening.')
         
         self.rename_zips(zips_new_name)
 
     def rename_zips(self, zips_new_name):
-        "renames within current directory or moves to another directory"
+        # renames within current directory or moves to another directory
         logging.info(f'Writing to {self.output_directory}')
         logging.debug(f'Renamed zips are:')
 
