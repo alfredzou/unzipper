@@ -1,11 +1,23 @@
-import os
-import re
+import os, re
+import logging
+
+def setup_logging():
+    logging.basicConfig(
+        filename='./logs/app.log',
+        level = logging.DEBUG,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
 
 class ZipList:
     def __init__(self, zip_path):
-        files = os.walk(zip_path).__next__()
-        self.zips = [zip for zip in files if re.search(r'^.*.(zip|rar)$',zip)]
+        # Create list of zips 
+        _,_,files = os.walk(zip_path).__next__()
+        logging.info(f'There are {len(files)} files in the root directory.')
+        logging.debug(f'The files are: {files}')
 
+        self.zips = [i for i in files if re.search(r'.(zip|rar)$',i)]
+        logging.info(f'There are {len(self.zips)} zips in the root directory.')
+        logging.debug(f'The zips are: {self.zips}')
 
     def manipulate_zips(self):
         self.rename_zips()
@@ -19,11 +31,13 @@ class ZipList:
         pass
 
     def rename_zips(self):
-        # for i,j in zip(input_zip_zips,f2):
+        pass
+        # for i,j in zip(self.zips,f2):
         #     os.rename(src=i,dst=j)
 
 def main():
-    zip_path = '.'
+    setup_logging()
+    zip_path = './input/'
     zip_list = ZipList(zip_path)
     zip_list.manipulate_zips()
     zip_list.shorten_zips()
