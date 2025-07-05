@@ -12,3 +12,7 @@ Stretch features:
 * Convert into JPG, delete originals
 * Executable and also a script 
 * If run as a script can target which folder
+
+# install
+
+* Requires 7z to be installed on path

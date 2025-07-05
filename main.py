@@ -2,6 +2,7 @@ import os, re
 import logging
 from pathlib import Path
 import shutil
+import rarfile
 
 def setup_logging():
     logging.basicConfig(
@@ -73,19 +74,30 @@ class ZipList:
         return space_check
 
     def extract_zips(self):
+        # Scan output directory for zip and rar files
+        # Check if enough space first
+        # If rar file, then use rarfile module
+        # Otherwise use shutil.unpack_archive for zip files
+        # Check extraction completed correctly
+        # If so remove the initial zip file
         file_list = os.listdir(self.output_directory)
         zips = [i for i in file_list if re.search(r'.(zip|rar)$',i)]
         zips_path = [self.output_directory / i for i in zips]
-        extracted_zips_path = [self.output_directory / '(processed)' / i for i in zips]
+        extracted_zips_path = [self.output_directory / '(processed)' / str.strip(i[:len(i)-4]) for i in zips]
 
-        for zip_name, i, j in zip(zips, zips_path,extracted_zips_path):
-            logging.debug(f"Attempting to extract {i}")
+        for zips, zip_input, zip_target in zip(zips, zips_path,extracted_zips_path):
+            logging.debug(f"Attempting to extract {zip_input}")
             if self.space_check():
                 try:
-                    extracted_path = self.output_directory / '(processed)' / str.strip(zip_name[:len(zip_name)-4])
-                    shutil.unpack_archive(i, extracted_path)
-                    if os.path.isdir(extracted_path) and os.listdir(extracted_path):
-                        os.remove(i)
+                    if zips[len(zips)-3:] == 'rar':
+                        logging.debug(f'Rar file detected.')
+                        with rarfile.RarFile(zip_input) as rf:
+                            rf.extractall(path=zip_target)
+                    else:
+                        shutil.unpack_archive(zip_input, zip_target)
+            
+                    if os.path.isdir(zip_target) and os.listdir(zip_target):
+                        os.remove(zip_input)
                         logging.debug(f'Unpack verified, zip deleted.')
                 except Exception as e:
                     logging.critical(f'Unpack failed: {e}')
