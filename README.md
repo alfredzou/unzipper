@@ -5,9 +5,9 @@ Purpose of this program is to:
 * Check folder name and truncate. Window paths over 255 characters aren't allowed.
 * Rename files removing prefix to get required format beginning with [
 * Run as executable
+* Extract files
 
 Stretch features:
-* Extract files
 * Resize images into 1920 * 1080
 * Convert into JPG, delete originals
 * Executable and also a script 
