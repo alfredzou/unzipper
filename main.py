@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 import shutil
 import rarfile
+import py7zr
 
 def setup_logging():
     logging.basicConfig(
@@ -27,7 +28,7 @@ class ZipList:
         logging.info(f'There are {len(files)} files in the directory.')
         logging.debug(f'The files are: {files}')
 
-        self.zips = [i for i in files if re.search(r'.(zip|rar)$',i)]
+        self.zips = [i for i in files if re.search(r'.(zip|rar|7z)$',i)]
         logging.info(f'There are {len(self.zips)} zips in the directory.')
         logging.debug(f'The zips are: {self.zips}')
 
@@ -44,8 +45,7 @@ class ZipList:
     def shorten_zips(self):
         # Reduce zips to specified number of characters
         threshold = 100
-        prefix_length = threshold - 4
-        self.zips_new_name = [i[:prefix_length]+i[-4:] if len(i)>threshold else i for i in self.zips_new_name]
+        self.zips_new_name = [i[:threshold]+Path(i).suffix if len(i)>threshold else i for i in self.zips_new_name]
         logging.info(f'There are {len([i for i in self.zips if len(i)>threshold])} zips longer than {threshold} characters.')
         logging.info('Starting shortening.')
 
@@ -81,15 +81,19 @@ class ZipList:
         # Check extraction completed correctly
         # If so remove the initial zip file
         file_list = os.listdir(self.output_directory)
-        zips = [i for i in file_list if re.search(r'.(zip|rar)$',i)]
+        zips = [Path(i) for i in file_list if re.search(r'.(zip|rar|7z)$',i)]
         zips_path = [self.output_directory / i for i in zips]
-        extracted_zips_path = [self.output_directory / '(processed)' / str.strip(i[:len(i)-4]) for i in zips]
+        extracted_zips_path = [self.output_directory / '(processed)' / i.stem for i in zips]
 
         for zips, zip_input, zip_target in zip(zips, zips_path,extracted_zips_path):
             logging.debug(f"Attempting to extract {zip_input}")
             if self.space_check():
                 try:
-                    if zips[len(zips)-3:] == 'rar':
+                    if zips.suffix == '.7z':
+                        logging.debug(f'7z file detected.')
+                        with py7zr.SevenZipFile(zip_input, mode='r') as szf:
+                            szf.extractall(path=zip_target)
+                    elif zips.suffix == '.rar':
                         logging.debug(f'Rar file detected.')
                         with rarfile.RarFile(zip_input) as rf:
                             rf.extractall(path=zip_target)
