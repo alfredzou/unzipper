@@ -6,10 +6,13 @@ import rarfile
 import py7zr
 
 def setup_logging():
+    log_path = Path(__file__).parent / 'logs' / 'log.txt'
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
     logging.basicConfig(
-        filename='./logs/app.log',
+        filename = log_path,
         level = logging.DEBUG,
-        format='%(asctime)s - %(levelname)s - %(message)s'
+        format = '%(asctime)s - %(levelname)s - %(message)s'
     )
 
 class ZipList:
