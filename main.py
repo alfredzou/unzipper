@@ -4,28 +4,55 @@ from pathlib import Path
 import shutil
 import rarfile
 import py7zr
+from dotenv import load_dotenv
+import os
 
-def setup_logging():
-    log_path = Path(__file__).parent / 'logs' / 'log.txt'
+def load_config():
+    load_dotenv()
+
+    config = {
+        "LOGGING_LEVEL": os.getenv("LOGGING_LEVEL", "WARNING").upper(),
+        "INPUT_DIRECTORY": Path(os.getenv("INPUT_DIRECTORY")),
+        "OUTPUT_DIRECTORY": Path(os.getenv("OUTPUT_DIRECTORY")),
+    }
+
+    # Reads the logging level from the .env file, with default logging level of logging.WARNING
+    valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+    if config["LOGGING_LEVEL"] not in valid_levels:
+        raise ValueError(f"Invalid LOGGING_LEVEL: {config["LOGGING_LEVEL"]}. Select a level from: {valid_levels}")
+
+    setup_logging(config)
+
+    if not config['INPUT_DIRECTORY'].is_dir():
+        raise ValueError(f"Input directory does not exist: {config['INPUT_DIRECTORY']}")
+    
+    if not config['OUTPUT_DIRECTORY'].is_dir():
+        raise ValueError(f"Input directory does not exist: {config['OUTPUT_DIRECTORY']}")
+    
+    return config
+
+def setup_logging(config):
+    log_path = Path(__file__).parent / 'logs' / 'app.log'
     log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    numeric_level = getattr(logging, config["LOGGING_LEVEL"])
 
     logging.basicConfig(
         filename = log_path,
-        level = logging.DEBUG,
+        level = numeric_level,
         format = '%(asctime)s - %(levelname)s - %(message)s'
     )
 
+    logging.info('=============================================================================')
+
 class ZipList:
-    def __init__(self, input_directory, output_directory=None):
+    def __init__(self, config):
         # Create list of zips 
-        self.input_directory = input_directory
-        _,_,files = os.walk(input_directory).__next__()
+        self.input_directory = config['INPUT_DIRECTORY']
+        _,_,files = os.walk(self.input_directory).__next__()
         logging.info(f'Scanning {self.input_directory}')
 
-        if output_directory == None:
-            self.output_directory = self.input_directory
-        else:
-            self.output_directory = output_directory
+        self.output_directory = config['OUTPUT_DIRECTORY']
         logging.info(f'Output directory set as {self.output_directory}')
 
         logging.info(f'There are {len(files)} files in the directory.')
@@ -110,12 +137,9 @@ class ZipList:
                     logging.critical(f'Unpack failed: {e}')
 
 def main():
-    setup_logging()
-    logging.info('=============================================================================')
-    input_directory = Path.home() / 'Downloads' / 'finished'
-    output_directory = Path.home() / 'Desktop' / 'outputs'
+    config = load_config()
     try:
-        zip_list = ZipList(input_directory, output_directory)
+        zip_list = ZipList(config)
         zip_list.cleaning_zips()
         zip_list.shorten_zips()
         zip_list.rename_zips()
