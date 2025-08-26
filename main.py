@@ -75,7 +75,7 @@ class ZipList:
     def shorten_zips(self):
         # Reduce zips to specified number of characters
         threshold = 100
-        self.zips_new_name = [i[:threshold]+Path(i).suffix if len(i)>threshold else i for i in self.zips_new_name]
+        self.zips_new_name = [i[:threshold].strip()+Path(i).suffix if len(i)>threshold else i for i in self.zips_new_name]
         logging.info(f'There are {len([i for i in self.zips if len(i)>threshold])} zips longer than {threshold} characters.')
         logging.info('Starting shortening.')
 
