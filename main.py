@@ -63,19 +63,26 @@ class ZipList:
         logging.debug(f'The zips are: {self.zips}')
 
     def cleaning_zips(self):
+        # Remove first ()
+        self.zips_new_name = [re.sub(r'^\(.*?\)\s*', '', i)
+                                for i in self.zips]
+        
         # Remove () within [] zip names
-        # Strip first character if its a [
         self.zips_new_name = [re.sub(r'^\[(.*?)]', 
                                 lambda m: "[{}]".format(re.sub(r' \(.*?\)', '', m.group(1))),
                                 i, count=1)
-                                for i in self.zips]
+                                for i in self.zips_new_name]
+
+        # Strip first character if its a [
         self.zips_new_name = [i[1:] if i[0] == '[' else i for i in self.zips_new_name]
         logging.info('Starting cleaning.')
 
     def shorten_zips(self):
         # Reduce zips to specified number of characters
         threshold = 100
-        self.zips_new_name = [i[:threshold].strip()+Path(i).suffix if len(i)>threshold else i for i in self.zips_new_name]
+        self.zips_new_name = [i[:threshold].strip()+Path(i).suffix if len(i)>threshold 
+                                else Path(i).stem.strip() + Path(i).suffix
+                                for i in self.zips_new_name]
         logging.info(f'There are {len([i for i in self.zips if len(i)>threshold])} zips longer than {threshold} characters.')
         logging.info('Starting shortening.')
 
