@@ -6,6 +6,7 @@ import rarfile
 import py7zr
 from dotenv import load_dotenv
 import os
+from PIL import Image
 
 def load_config():
     load_dotenv()
@@ -42,6 +43,8 @@ def setup_logging(config):
         level = numeric_level,
         format = '%(asctime)s - %(levelname)s - %(message)s'
     )
+
+    logging.getLogger("PIL").setLevel(logging.WARNING)
 
     logging.info('=============================================================================')
 
@@ -143,6 +146,31 @@ class ZipList:
                 except Exception as e:
                     logging.critical(f'Unpack failed: {e}')
 
+    def resize(self):
+        input_folder = self.output_directory / '(processed)'
+
+        image_files = list(input_folder.rglob('*.jpg'))
+        image_files += list(input_folder.rglob('*.png'))
+        image_files += list(input_folder.rglob('*.webp'))
+
+        for image in image_files:
+            try:
+                img = Image.open(image)
+                if img.mode in ('RGBA', 'LA', 'P', 'I;16'):
+                    logging.info(f'Detected mode {img.mode}.')
+                    img = img.convert("RGB")
+                    logging.info(f'Converted {image} to compatible mode.')
+                img.thumbnail((1920,1080))
+
+                new_name = image.stem + ".jpg"
+                new_path = Path(str(image.parent).replace('(processed)','(resized)')) / new_name
+                new_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                img.save(new_path, 'jpeg')
+                logging.info(f'Resized {image} to {new_path}.')
+            except Exception as e:
+                logging.critical(f'Resize failed for {image}: {e}')
+
 def main():
     config = load_config()
     try:
@@ -151,6 +179,7 @@ def main():
         zip_list.shorten_zips()
         zip_list.rename_zips()
         zip_list.extract_zips()
+        zip_list.resize()
     except Exception as e:
         logging.critical(f'Error: {e}')
 
