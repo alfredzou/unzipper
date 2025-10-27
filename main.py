@@ -7,6 +7,7 @@ import py7zr
 from dotenv import load_dotenv
 import os
 from PIL import Image
+import numpy as np
 
 def load_config():
     load_dotenv()
@@ -149,18 +150,25 @@ class ZipList:
     def resize(self):
         input_folder = self.output_directory / '(processed)'
 
-        image_files = list(input_folder.rglob('*.jpg'))
-        image_files += list(input_folder.rglob('*.png'))
-        image_files += list(input_folder.rglob('*.webp'))
-
+        image_files = []
+        for ext in ('*.jpg', '*.png', '*.webp'):
+            image_files.extend(input_folder.rglob(ext))
+        
         for image in image_files:
             try:
                 img = Image.open(image)
                 if img.mode in ('RGBA', 'LA', 'P', 'I;16'):
                     logging.info(f'Detected mode {img.mode}.')
+                    if img.mode == 'I;16':
+                        # Compress 16bit to 8bit image
+                        arr = np.array(img, dtype=np.float32)
+                        arr = (arr / arr.max()) * 255
+                        arr = arr.astype(np.uint8)
+
+                        img = Image.fromarray(arr)
                     img = img.convert("RGB")
-                    logging.info(f'Converted {image} to compatible mode.')
-                img.thumbnail((1920,1080))
+                    logging.info(f'Converted to compatible mode.')
+                img.thumbnail((1920,1080), Image.Resampling.LANCZOS)
 
                 new_name = image.stem + ".jpg"
                 new_path = Path(str(image.parent).replace('(processed)','(resized)')) / new_name
