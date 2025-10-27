@@ -1,11 +1,14 @@
-import os, re
+# Standard Libraries
+import os
+import re
 import logging
 from pathlib import Path
 import shutil
+
+# Third-Party Libraries
 import rarfile
 import py7zr
 from dotenv import load_dotenv
-import os
 from PIL import Image
 import numpy as np
 
@@ -29,7 +32,7 @@ def load_config():
         raise ValueError(f"Input directory does not exist: {config['INPUT_DIRECTORY']}")
     
     if not config['OUTPUT_DIRECTORY'].is_dir():
-        raise ValueError(f"Input directory does not exist: {config['OUTPUT_DIRECTORY']}")
+        raise ValueError(f"Output directory does not exist: {config['OUTPUT_DIRECTORY']}")
     
     return config
 
@@ -46,9 +49,6 @@ def setup_logging(config):
     )
 
     logging.getLogger("PIL").setLevel(logging.WARNING)
-
-    logging.info('=============================================================================')
-
 class ZipList:
     def __init__(self, config):
         # Create list of zips 
@@ -102,7 +102,6 @@ class ZipList:
             if i != j:
                 logging.debug(i)
                 logging.debug(j)
-                logging.debug('-----------------------------------------------------------------------------')
             
             os.rename(src=input_path, dst=output_path)
 
