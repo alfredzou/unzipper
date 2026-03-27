@@ -83,7 +83,7 @@ class ZipList:
 
     def shorten_zips(self):
         # Reduce zips to specified number of characters
-        threshold = 100
+        threshold = 150
         self.zips_new_name = [i[:threshold].strip()+Path(i).suffix if len(i)>threshold 
                                 else Path(i).stem.strip() + Path(i).suffix
                                 for i in self.zips_new_name]
@@ -153,7 +153,8 @@ class ZipList:
         for ext in ('*.jpg', '*.png', '*.webp'):
             image_files.extend(input_folder.rglob(ext))
         
-        for image in image_files:
+        sorted_image_files = sorted(image_files, key=lambda x: str(x))
+        for image in sorted_image_files:
             try:
                 img = Image.open(image)
                 if img.mode in ('RGBA', 'LA', 'P', 'I;16'):
@@ -175,6 +176,10 @@ class ZipList:
                 
                 img.save(new_path, 'jpeg')
                 logging.info(f'Resized {image} to {new_path}.')
+
+                if os.path.isfile(new_path):
+                    os.remove(image)
+
             except Exception as e:
                 logging.critical(f'Resize failed for {image}: {e}')
 
